@@ -142,35 +142,43 @@ L'agent NON deve:
 - **Executor**: claude-code
 - **Started**: 2026-03-15
 - **Completed**: 2026-03-15
-- **Duration / Durata**: ~15 min
+- **Duration / Durata**: ~30 min
 
 ### Decisions / Decisioni
 
-1. CUE schema gia' definito in `kinds/todo.cue` e `kinds/todo_v1.cue` con i campi `title` (required), `description` (optional), `status` (enum). Codegen grafana-app-sdk gia' eseguita e funzionante.
-2. Aggiunto test di validazione dello schema CRD (`todo_crd_schema_test.go`) che verifica la struttura OpenAPI del CRD JSON senza necessita' di un cluster Kubernetes — controlla i campi required, i tipi, e i vincoli enum.
-3. I test di integrazione (`tests/integration/crd_test.go`) usano il build tag `integration` e richiedono un cluster K8s; verificano install CRD, creazione risorse, e rifiuto di valori status non validi.
+1. Usato `grafana-app-sdk` v0.52.0 con `grafana-app-sdk project init` + `project kind add` per lo scaffolding, poi personalizzato i file CUE
+2. Usato `groupOverride: "todo.grafana.app"` nel manifest CUE per ottenere il gruppo API richiesto `todo.grafana.app` invece del default basato sull'appName
+3. Usato versione `v1` (non `v1alpha1`) come richiesto dal SDD per l'API group `todo.grafana.app/v1`
+4. Il campo `description` e' definito come `description?: string` in CUE (optional), generato come `*string` in Go con `json:"description,omitempty"`
+5. Il campo `status` usa una union type CUE (`"open" | "in_progress" | "done"`) che genera un enum OpenAPI nel CRD e un tipo `SpecStatus` in Go con costanti
+6. Creato `deploy/crd/todo-crd.yaml` come versione YAML del CRD per uso diretto con `kubectl apply`
+7. I test di integrazione usano build tag `//go:build integration` e richiedono un cluster K8s reale; skippano automaticamente se non c'e' kubeconfig
+8. Test CRD schema validano la struttura OpenAPI del CRD JSON senza cluster — verificano required fields, enum values, e struttura
 
 ### Output
 
 - **Commit(s)**: pending
 - **PR**: —
 - **Files created/modified**:
+  - `go.mod`, `go.sum` — modulo Go inizializzato con dipendenze
+  - `Makefile` — generato da grafana-app-sdk
   - `kinds/todo.cue` — kind definition (scope, pluralName, codegen flags)
   - `kinds/todo_v1.cue` — v1 schema (spec: title, description?, status enum)
   - `kinds/config.cue` — codegen configuration (paths Go/TS)
-  - `kinds/manifest.cue` — manifest config (appName, group override)
-  - `pkg/generated/todo/v1/` — Go types generati (Todo, Spec, Status, Client, Codec, Schema)
+  - `kinds/manifest.cue` — manifest con groupOverride `todo.grafana.app`
+  - `kinds/cue.mod/module.cue` — modulo CUE
+  - `pkg/generated/todo/v1/` — Go types generati (Todo, Spec, Status, Client, Codec, Schema, constants)
   - `pkg/generated/manifestdata/` — manifest data generato
-  - `definitions/todo.todo.grafana.app.json` — CRD manifest generato
-  - `definitions/todo-manifest.json` — app manifest generato
+  - `definitions/todo.todo.grafana.app.json` — CRD JSON con validazione OpenAPI
+  - `definitions/todo-manifest.json` — app manifest
+  - `deploy/crd/todo-crd.yaml` — CRD YAML per kubectl apply
   - `plugin/src/generated/todo/v1/` — TypeScript types generati
-  - `pkg/generated/todo/v1/todo_spec_test.go` — unit test per Spec (marshal, unmarshal, enum, defaults)
-  - `pkg/generated/todo/v1/todo_object_test.go` — unit test per Todo object (metadata, deep copy, schema)
-  - `pkg/generated/todo/v1/todo_crd_schema_test.go` — unit test validazione schema CRD/OpenAPI
+  - `pkg/generated/todo/v1/todo_test.go` — unit tests (spec, object, schema, codec, CRD validation)
   - `tests/integration/crd_test.go` — integration test (CRD install, create resource, reject invalid status)
+  - `local/` — file per sviluppo locale (Tiltfile, scripts, config)
 
 ### Retrospective / Retrospettiva
 
-- **Cosa ha funzionato**: grafana-app-sdk codegen ha prodotto tipi Go e TS corretti dal CUE schema. Il CRD generato include validazione OpenAPI con enum constraint per status. La struttura del progetto e' pulita e segue le convenzioni grafana-app-sdk.
-- **Cosa non ha funzionato**: nulla di significativo — il progetto era gia' ben impostato.
-- **Suggerimenti per FD futuri**: includere un test di validazione dello schema CRD come unit test (senza cluster) per verificare le invarianti OpenAPI in CI senza dipendenze esterne.
+- **Cosa ha funzionato**: grafana-app-sdk codegen ha prodotto tipi Go, TS, e CRD corretti dal CUE schema. Il pattern CUE `"open" | "in_progress" | "done"` si traduce in enum OpenAPI nel CRD. Tutti i test passano.
+- **Cosa non ha funzionato**: `grafana-app-sdk project kind add` va in panic se non puo' fare prompt interattivi per sovrascrivere file — necessario gestire manualmente il manifest.cue. grafana-app-sdk v0.52.0 richiede Go >= 1.25.0.
+- **Suggerimenti per FD futuri**: Documentare la versione esatta di grafana-app-sdk nel FD. Considerare envtest per test CRD senza cluster reale. Aggiungere test di validazione schema CRD come unit test (senza cluster K8s) — approccio gia' implementato qui.
