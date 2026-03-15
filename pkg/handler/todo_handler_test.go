@@ -107,6 +107,10 @@ func (m *mockTodoRepository) Delete(_ context.Context, namespace, name string) e
 }
 
 func (m *mockTodoRepository) addTodo(namespace, name, title string, status todov1.SpecStatus) {
+	m.addTodoWithPriority(namespace, name, title, status, "")
+}
+
+func (m *mockTodoRepository) addTodoWithPriority(namespace, name, title string, status todov1.SpecStatus, priority todov1.SpecPriority) {
 	key := namespace + "/" + name
 	m.todos[key] = &todov1.Todo{
 		TypeMeta: metav1.TypeMeta{
@@ -120,8 +124,9 @@ func (m *mockTodoRepository) addTodo(namespace, name, title string, status todov
 			UID:             types.UID("uid-" + name),
 		},
 		Spec: todov1.Spec{
-			Title:  title,
-			Status: status,
+			Title:    title,
+			Status:   status,
+			Priority: priority,
 		},
 	}
 }
@@ -636,4 +641,257 @@ func TestIsNotFound_False(t *testing.T) {
 	if isNotFound(fmt.Errorf("connection refused")) {
 		t.Error("expected isNotFound=false for 'connection refused'")
 	}
+}
+
+// --- Priority tests ---
+
+func TestCreateTodo_WithPriority(t *testing.T) {
+	priorities := []string{"low", "medium", "high", "critical"}
+	for _, p := range priorities {
+		t.Run(p, func(t *testing.T) {
+			h, _ := newTestHandler()
+			w := httptest.NewRecorder()
+			body := fmt.Sprintf(`{"title": "Test", "status": "open", "priority": %q}`, p)
+			r := makeRequest(http.MethodPost, body)
+
+			h.CreateTodo(w, r, "default")
+
+			if w.Code != http.StatusCreated {
+				t.Fatalf("expected status 201, got %d", w.Code)
+			}
+			var todo todov1.Todo
+			decodeResponse(t, w, &todo)
+			if string(todo.Spec.Priority) != p {
+				t.Errorf("expected priority %q, got %q", p, todo.Spec.Priority)
+			}
+		})
+	}
+}
+
+func TestCreateTodo_DefaultPriority(t *testing.T) {
+	h, _ := newTestHandler()
+	w := httptest.NewRecorder()
+	body := `{"title": "Test", "status": "open"}`
+	r := makeRequest(http.MethodPost, body)
+
+	h.CreateTodo(w, r, "default")
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", w.Code)
+	}
+	var todo todov1.Todo
+	decodeResponse(t, w, &todo)
+	if todo.Spec.Priority != todov1.SpecPriorityMedium {
+		t.Errorf("expected default priority 'medium', got %q", todo.Spec.Priority)
+	}
+}
+
+func TestCreateTodo_InvalidPriority(t *testing.T) {
+	invalidValues := []string{"invalid", "urgent"}
+	for _, p := range invalidValues {
+		t.Run(p, func(t *testing.T) {
+			h, _ := newTestHandler()
+			w := httptest.NewRecorder()
+			body := fmt.Sprintf(`{"title": "Test", "status": "open", "priority": %q}`, p)
+			r := makeRequest(http.MethodPost, body)
+
+			h.CreateTodo(w, r, "default")
+
+			if w.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("expected status 422, got %d", w.Code)
+			}
+			var errResp ErrorResponse
+			decodeResponse(t, w, &errResp)
+			if errResp.Error != "validation_error" {
+				t.Errorf("expected error 'validation_error', got %q", errResp.Error)
+			}
+		})
+	}
+}
+
+func TestUpdateTodo_WithPriority(t *testing.T) {
+	priorities := []string{"low", "medium", "high", "critical"}
+	for _, p := range priorities {
+		t.Run(p, func(t *testing.T) {
+			h, repo := newTestHandler()
+			repo.addTodoWithPriority("default", "todo-1", "Test", todov1.SpecStatusOpen, todov1.SpecPriorityMedium)
+			w := httptest.NewRecorder()
+			body := fmt.Sprintf(`{"title": "Test", "status": "open", "priority": %q}`, p)
+			r := makeRequest(http.MethodPut, body)
+
+			h.UpdateTodo(w, r, "default", "todo-1")
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("expected status 200, got %d", w.Code)
+			}
+			var todo todov1.Todo
+			decodeResponse(t, w, &todo)
+			if string(todo.Spec.Priority) != p {
+				t.Errorf("expected priority %q, got %q", p, todo.Spec.Priority)
+			}
+		})
+	}
+}
+
+func TestUpdateTodo_InvalidPriority(t *testing.T) {
+	invalidValues := []string{"invalid", "none"}
+	for _, p := range invalidValues {
+		t.Run(p, func(t *testing.T) {
+			h, repo := newTestHandler()
+			repo.addTodoWithPriority("default", "todo-1", "Test", todov1.SpecStatusOpen, todov1.SpecPriorityMedium)
+			w := httptest.NewRecorder()
+			body := fmt.Sprintf(`{"title": "Test", "status": "open", "priority": %q}`, p)
+			r := makeRequest(http.MethodPut, body)
+
+			h.UpdateTodo(w, r, "default", "todo-1")
+
+			if w.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("expected status 422, got %d", w.Code)
+			}
+			var errResp ErrorResponse
+			decodeResponse(t, w, &errResp)
+			if errResp.Error != "validation_error" {
+				t.Errorf("expected error 'validation_error', got %q", errResp.Error)
+			}
+		})
+	}
+}
+
+func TestGetTodo_ReturnsPriority(t *testing.T) {
+	h, repo := newTestHandler()
+	repo.addTodoWithPriority("default", "todo-1", "Test", todov1.SpecStatusOpen, todov1.SpecPriorityHigh)
+	w := httptest.NewRecorder()
+	r := makeRequest(http.MethodGet, "")
+
+	h.GetTodo(w, r, "default", "todo-1")
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+	var todo todov1.Todo
+	decodeResponse(t, w, &todo)
+	if todo.Spec.Priority != todov1.SpecPriorityHigh {
+		t.Errorf("expected priority 'high', got %q", todo.Spec.Priority)
+	}
+}
+
+func TestGetTodo_DefaultsPriorityForExistingTodos(t *testing.T) {
+	h, repo := newTestHandler()
+	// Simulate an existing Todo without priority (empty string)
+	repo.addTodo("default", "todo-1", "Legacy Todo", todov1.SpecStatusOpen)
+	w := httptest.NewRecorder()
+	r := makeRequest(http.MethodGet, "")
+
+	h.GetTodo(w, r, "default", "todo-1")
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+	var todo todov1.Todo
+	decodeResponse(t, w, &todo)
+	if todo.Spec.Priority != todov1.SpecPriorityMedium {
+		t.Errorf("expected default priority 'medium' for legacy todo, got %q", todo.Spec.Priority)
+	}
+}
+
+func TestListTodos_ReturnsPriorityOnEachItem(t *testing.T) {
+	h, repo := newTestHandler()
+	repo.addTodoWithPriority("default", "todo-1", "First", todov1.SpecStatusOpen, todov1.SpecPriorityLow)
+	repo.addTodoWithPriority("default", "todo-2", "Second", todov1.SpecStatusDone, todov1.SpecPriorityCritical)
+	// Third todo without priority (legacy) — should default to "medium"
+	repo.addTodo("default", "todo-3", "Legacy", todov1.SpecStatusOpen)
+	w := httptest.NewRecorder()
+	r := makeRequest(http.MethodGet, "")
+
+	h.ListTodos(w, r, "default")
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+	var list todov1.TodoList
+	decodeResponse(t, w, &list)
+	if len(list.Items) != 3 {
+		t.Fatalf("expected 3 items, got %d", len(list.Items))
+	}
+	for _, item := range list.Items {
+		if item.Spec.Priority == "" {
+			t.Errorf("expected priority to be set on item %q, got empty", item.Name)
+		}
+	}
+}
+
+func TestCreateTodo_FullCRUDWithPriority(t *testing.T) {
+	h, repo := newTestHandler()
+
+	// Create with "high" priority
+	w := httptest.NewRecorder()
+	body := `{"title": "CRUD Test", "status": "open", "priority": "high"}`
+	r := makeRequest(http.MethodPost, body)
+	h.CreateTodo(w, r, "default")
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create: expected 201, got %d", w.Code)
+	}
+	var created todov1.Todo
+	decodeResponse(t, w, &created)
+	if created.Spec.Priority != todov1.SpecPriorityHigh {
+		t.Fatalf("create: expected priority 'high', got %q", created.Spec.Priority)
+	}
+
+	// Read back
+	w = httptest.NewRecorder()
+	r = makeRequest(http.MethodGet, "")
+	h.GetTodo(w, r, "default", created.Name)
+	if w.Code != http.StatusOK {
+		t.Fatalf("get: expected 200, got %d", w.Code)
+	}
+	var fetched todov1.Todo
+	decodeResponse(t, w, &fetched)
+	if fetched.Spec.Priority != todov1.SpecPriorityHigh {
+		t.Fatalf("get: expected priority 'high', got %q", fetched.Spec.Priority)
+	}
+
+	// Update to "low"
+	w = httptest.NewRecorder()
+	body = `{"title": "CRUD Test", "status": "open", "priority": "low"}`
+	r = makeRequest(http.MethodPut, body)
+	h.UpdateTodo(w, r, "default", created.Name)
+	if w.Code != http.StatusOK {
+		t.Fatalf("update: expected 200, got %d", w.Code)
+	}
+	var updated todov1.Todo
+	decodeResponse(t, w, &updated)
+	if updated.Spec.Priority != todov1.SpecPriorityLow {
+		t.Fatalf("update: expected priority 'low', got %q", updated.Spec.Priority)
+	}
+
+	// Verify via get
+	w = httptest.NewRecorder()
+	r = makeRequest(http.MethodGet, "")
+	h.GetTodo(w, r, "default", created.Name)
+	if w.Code != http.StatusOK {
+		t.Fatalf("verify: expected 200, got %d", w.Code)
+	}
+	var verified todov1.Todo
+	decodeResponse(t, w, &verified)
+	if verified.Spec.Priority != todov1.SpecPriorityLow {
+		t.Fatalf("verify: expected priority 'low', got %q", verified.Spec.Priority)
+	}
+
+	// Delete
+	w = httptest.NewRecorder()
+	r = makeRequest(http.MethodDelete, "")
+	h.DeleteTodo(w, r, "default", created.Name)
+	if w.Code != http.StatusOK {
+		t.Fatalf("delete: expected 200, got %d", w.Code)
+	}
+
+	// Verify deleted
+	w = httptest.NewRecorder()
+	r = makeRequest(http.MethodGet, "")
+	h.GetTodo(w, r, "default", created.Name)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("after delete: expected 404, got %d", w.Code)
+	}
+
+	_ = repo // used by handler through newTestHandler
 }

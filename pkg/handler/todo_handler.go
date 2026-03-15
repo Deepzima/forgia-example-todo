@@ -18,6 +18,7 @@ type TodoRequest struct {
 	Title       string  `json:"title"`
 	Description *string `json:"description,omitempty"`
 	Status      string  `json:"status"`
+	Priority    *string `json:"priority,omitempty"`
 }
 
 // ErrorResponse is a standard error response body.
@@ -53,6 +54,11 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request, namespa
 		return
 	}
 
+	priority := todov1.SpecPriorityMedium
+	if req.Priority != nil {
+		priority = todov1.SpecPriority(*req.Priority)
+	}
+
 	todo := &todov1.Todo{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       todov1.Kind().Kind(),
@@ -66,6 +72,7 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request, namespa
 			Title:       req.Title,
 			Description: req.Description,
 			Status:      todov1.SpecStatus(req.Status),
+			Priority:    priority,
 		},
 	}
 
@@ -93,6 +100,7 @@ func (h *TodoHandler) GetTodo(w http.ResponseWriter, r *http.Request, namespace,
 		return
 	}
 
+	ensurePriority(todo)
 	writeJSON(w, http.StatusOK, todo)
 }
 
@@ -105,6 +113,9 @@ func (h *TodoHandler) ListTodos(w http.ResponseWriter, r *http.Request, namespac
 		return
 	}
 
+	for i := range list.Items {
+		ensurePriority(&list.Items[i])
+	}
 	writeJSON(w, http.StatusOK, list)
 }
 
@@ -133,10 +144,16 @@ func (h *TodoHandler) UpdateTodo(w http.ResponseWriter, r *http.Request, namespa
 		return
 	}
 
+	priority := existing.Spec.Priority
+	if req.Priority != nil {
+		priority = todov1.SpecPriority(*req.Priority)
+	}
+
 	existing.Spec = todov1.Spec{
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      todov1.SpecStatus(req.Status),
+		Priority:    priority,
 	}
 
 	updated, err := h.repo.Update(r.Context(), existing)
@@ -187,7 +204,30 @@ func validateTodoRequest(req *TodoRequest) string {
 		return fmt.Sprintf("invalid status %q: must be one of: open, in_progress, done", req.Status)
 	}
 
+	if req.Priority != nil {
+		if msg := validatePriority(*req.Priority); msg != "" {
+			return msg
+		}
+	}
+
 	return ""
+}
+
+func validatePriority(value string) string {
+	switch todov1.SpecPriority(value) {
+	case todov1.SpecPriorityLow, todov1.SpecPriorityMedium,
+		todov1.SpecPriorityHigh, todov1.SpecPriorityCritical:
+		return ""
+	default:
+		return fmt.Sprintf("invalid priority: must be one of low, medium, high, critical")
+	}
+}
+
+// ensurePriority defaults empty priority to "medium" for existing Todos.
+func ensurePriority(todo *todov1.Todo) {
+	if todo.Spec.Priority == "" {
+		todo.Spec.Priority = todov1.SpecPriorityMedium
+	}
 }
 
 func decodeRequest(body io.Reader) (*TodoRequest, error) {
