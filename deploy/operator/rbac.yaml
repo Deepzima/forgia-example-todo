@@ -1,0 +1,49 @@
+# ClusterRole con permessi minimi per gestire le risorse Todo
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: todo-operator
+  labels:
+    app.kubernetes.io/name: todo-operator
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: forgia-example-todo
+rules:
+  # Permessi per gestire le risorse Todo (CRD)
+  - apiGroups:
+      - todo.grafana.app
+    resources:
+      - todos
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  # Permessi per aggiornare lo status delle risorse Todo
+  - apiGroups:
+      - todo.grafana.app
+    resources:
+      - todos/status
+    verbs:
+      - get
+      - update
+      - patch
+---
+# ClusterRoleBinding per associare il ClusterRole al ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: todo-operator
+  labels:
+    app.kubernetes.io/name: todo-operator
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: forgia-example-todo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: todo-operator
+subjects:
+  - kind: ServiceAccount
+    name: todo-operator
+    namespace: todo-app

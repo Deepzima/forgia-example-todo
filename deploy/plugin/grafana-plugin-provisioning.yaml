@@ -1,0 +1,14 @@
+# Provisioning del plugin TODO App per Grafana su zima-lab
+# Questo file va copiato nella directory di provisioning di Grafana:
+#   /etc/grafana/provisioning/plugins/todo-app.yaml
+apiVersion: 1
+
+apps:
+  - type: todo-app
+    org_id: 1
+    org_name: Main Org.
+    disabled: false
+    jsonData:
+      namespace: todo-app
+    secureJsonData:
+      kubeconfig: <SECRET_PLACEHOLDER>

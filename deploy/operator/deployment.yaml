@@ -1,0 +1,61 @@
+# Deployment per il todo-operator
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-operator
+  namespace: todo-app
+  labels:
+    app.kubernetes.io/name: todo-operator
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: forgia-example-todo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: todo-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: todo-operator
+        app.kubernetes.io/component: operator
+        app.kubernetes.io/part-of: forgia-example-todo
+    spec:
+      serviceAccountName: todo-operator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: operator
+          image: forgia-example-todo:latest
+          args:
+            - "--metrics-port=9090"
+          ports:
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
