@@ -33,6 +33,7 @@ func TestTodo_FullJSONStructure(t *testing.T) {
 			Title:       "My TODO",
 			Description: &desc,
 			Status:      SpecStatusOpen,
+			Priority:    SpecPriorityHigh,
 		},
 	}
 
@@ -76,6 +77,9 @@ func TestTodo_FullJSONStructure(t *testing.T) {
 	}
 	if spec["status"] != "open" {
 		t.Errorf("expected status 'open', got '%v'", spec["status"])
+	}
+	if spec["priority"] != "high" {
+		t.Errorf("expected priority 'high', got '%v'", spec["priority"])
 	}
 }
 
@@ -148,6 +152,61 @@ func TestKind_HasJSONCodec(t *testing.T) {
 	}
 	if codec == nil {
 		t.Fatal("JSON codec is nil")
+	}
+}
+
+func TestSpecPriority_ConstantsMatchExpectedValues(t *testing.T) {
+	tests := []struct {
+		constant SpecPriority
+		expected string
+	}{
+		{SpecPriorityLow, "low"},
+		{SpecPriorityMedium, "medium"},
+		{SpecPriorityHigh, "high"},
+		{SpecPriorityCritical, "critical"},
+	}
+	for _, tt := range tests {
+		if string(tt.constant) != tt.expected {
+			t.Errorf("expected %q, got %q", tt.expected, string(tt.constant))
+		}
+	}
+}
+
+func TestSpec_PriorityOmittedWhenEmpty(t *testing.T) {
+	// Backward compatibility: existing Todos without priority should serialize without the field
+	spec := Spec{
+		Title:  "No priority",
+		Status: SpecStatusOpen,
+	}
+	data, err := json.Marshal(spec)
+	if err != nil {
+		t.Fatalf("failed to marshal: %v", err)
+	}
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	if _, exists := parsed["priority"]; exists {
+		t.Error("priority should be omitted when empty (backward compatibility)")
+	}
+}
+
+func TestSpec_PriorityIncludedWhenSet(t *testing.T) {
+	spec := Spec{
+		Title:    "With priority",
+		Status:   SpecStatusOpen,
+		Priority: SpecPriorityHigh,
+	}
+	data, err := json.Marshal(spec)
+	if err != nil {
+		t.Fatalf("failed to marshal: %v", err)
+	}
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	if parsed["priority"] != "high" {
+		t.Errorf("expected priority %q, got %v", "high", parsed["priority"])
 	}
 }
 

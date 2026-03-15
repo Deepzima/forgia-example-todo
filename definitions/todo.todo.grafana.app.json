@@ -20,6 +20,17 @@
                                         "description": "Optional description of the TODO item",
                                         "type": "string"
                                     },
+                                    "priority": {
+                                        "description": "Priority level of the TODO item (optional, defaults to \"medium\")",
+                                        "enum": [
+                                            "low",
+                                            "medium",
+                                            "high",
+                                            "critical"
+                                        ],
+                                        "default": "medium",
+                                        "type": "string"
+                                    },
                                     "status": {
                                         "description": "Current status of the TODO item",
                                         "enum": [

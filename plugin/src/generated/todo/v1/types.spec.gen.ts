@@ -7,6 +7,8 @@ export interface Spec {
 	description?: string;
 	// Current status of the TODO item
 	status: "open" | "in_progress" | "done";
+	// Priority level of the TODO item (optional, defaults to "medium")
+	priority?: "low" | "medium" | "high" | "critical";
 }
 
 export const defaultSpec = (): Spec => ({

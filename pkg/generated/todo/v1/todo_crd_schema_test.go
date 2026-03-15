@@ -163,4 +163,40 @@ func TestCRDSchema_SpecFieldsValidation(t *testing.T) {
 	if requiredMap["description"] {
 		t.Error("description should NOT be required in spec")
 	}
+	if requiredMap["priority"] {
+		t.Error("priority should NOT be required in spec (optional with default)")
+	}
+
+	// Verify priority field has enum constraint and default
+	priorityField, ok := specProps["priority"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected priority field in spec properties")
+	}
+	if priorityField["type"] != "string" {
+		t.Errorf("expected priority type %q, got %q", "string", priorityField["type"])
+	}
+	if priorityField["default"] != "medium" {
+		t.Errorf("expected priority default %q, got %v", "medium", priorityField["default"])
+	}
+	priorityEnums, ok := priorityField["enum"].([]interface{})
+	if !ok {
+		t.Fatal("expected priority field to have enum constraint")
+	}
+	expectedPriorityEnums := map[string]bool{"low": false, "medium": false, "high": false, "critical": false}
+	for _, v := range priorityEnums {
+		s, ok := v.(string)
+		if !ok {
+			t.Errorf("expected enum value to be string, got %T", v)
+			continue
+		}
+		if _, exists := expectedPriorityEnums[s]; !exists {
+			t.Errorf("unexpected priority enum value %q", s)
+		}
+		expectedPriorityEnums[s] = true
+	}
+	for k, found := range expectedPriorityEnums {
+		if !found {
+			t.Errorf("missing expected priority enum value %q", k)
+		}
+	}
 }

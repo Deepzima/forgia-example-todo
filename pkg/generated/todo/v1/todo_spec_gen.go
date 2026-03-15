@@ -10,6 +10,8 @@ type Spec struct {
 	Description *string `json:"description,omitempty"`
 	// Current status of the TODO item
 	Status SpecStatus `json:"status"`
+	// Priority level of the TODO item (optional, defaults to "medium")
+	Priority SpecPriority `json:"priority,omitempty"`
 }
 
 // NewSpec creates a new Spec object.
@@ -34,4 +36,19 @@ const (
 // OpenAPIModelName returns the OpenAPI model name for SpecStatus.
 func (SpecStatus) OpenAPIModelName() string {
 	return "com.github.zima.forgia-example-todo.pkg.generated.todo.v1.SpecStatus"
+}
+
+// +k8s:openapi-gen=true
+type SpecPriority string
+
+const (
+	SpecPriorityLow      SpecPriority = "low"
+	SpecPriorityMedium   SpecPriority = "medium"
+	SpecPriorityHigh     SpecPriority = "high"
+	SpecPriorityCritical SpecPriority = "critical"
+)
+
+// OpenAPIModelName returns the OpenAPI model name for SpecPriority.
+func (SpecPriority) OpenAPIModelName() string {
+	return "com.github.zima.forgia-example-todo.pkg.generated.todo.v1.SpecPriority"
 }
