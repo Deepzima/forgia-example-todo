@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Alert, Button, Spinner, Stack } from '@grafana/ui';
+import React, { useMemo, useState } from 'react';
+import { Alert, Button, RadioButtonGroup, Select, Spinner, Stack } from '@grafana/ui';
 import { PluginPage } from '@grafana/runtime';
 
 import type { Todo } from '../generated/todo/v1/todo_object_gen';
@@ -7,16 +7,43 @@ import type { Spec } from '../generated/todo/v1/types.spec.gen';
 import { useTodos } from '../hooks/useTodos';
 import { TodoList } from '../components/TodoList';
 import { TodoForm } from '../components/TodoForm';
+import { PRIORITY_OPTIONS, sortByPriority, filterByPriority } from '../components/priorityUtils';
+import type { Priority } from '../components/priorityUtils';
 
 const NAMESPACE = 'default';
 
 type ViewMode = 'list' | 'create' | 'edit';
+type SortDirection = 'desc' | 'asc' | 'none';
+
+const SORT_OPTIONS = [
+  { label: 'No sort', value: 'none' as const },
+  { label: 'Critical first', value: 'desc' as const },
+  { label: 'Low first', value: 'asc' as const },
+];
+
+const FILTER_OPTIONS = [
+  { label: 'All', value: '' },
+  ...PRIORITY_OPTIONS.map((o) => ({ label: o.label, value: o.value })),
+];
 
 export function TodoPage(): React.ReactElement {
   const { todos, isLoading, error, create, update, remove } = useTodos(NAMESPACE);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('none');
+  const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
+
+  const displayedTodos = useMemo(() => {
+    let result = todos;
+    if (priorityFilter) {
+      result = filterByPriority(result, [priorityFilter]);
+    }
+    if (sortDirection !== 'none') {
+      result = sortByPriority(result, sortDirection === 'desc');
+    }
+    return result;
+  }, [todos, sortDirection, priorityFilter]);
 
   const handleCreate = async (spec: Spec): Promise<void> => {
     setIsSubmitting(true);
@@ -77,17 +104,33 @@ export function TodoPage(): React.ReactElement {
 
         {viewMode === 'list' && (
           <>
-            <div>
+            <Stack direction="row" gap={2}>
               <Button onClick={() => setViewMode('create')} data-testid="todo-create-btn">
                 Create TODO
               </Button>
-            </div>
+              <div data-testid="todo-sort-control">
+                <RadioButtonGroup
+                  options={SORT_OPTIONS}
+                  value={sortDirection}
+                  onChange={(v) => setSortDirection(v as SortDirection)}
+                />
+              </div>
+              <div data-testid="todo-filter-control">
+                <Select
+                  data-testid="todo-priority-filter"
+                  options={FILTER_OPTIONS}
+                  value={priorityFilter}
+                  onChange={(v) => setPriorityFilter((v.value ?? '') as Priority | '')}
+                  placeholder="Filter by priority"
+                />
+              </div>
+            </Stack>
 
             {isLoading ? (
               <Spinner data-testid="todo-spinner" />
             ) : (
               <TodoList
-                todos={todos}
+                todos={displayedTodos}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}

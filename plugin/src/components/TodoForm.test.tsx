@@ -56,6 +56,7 @@ describe('TodoForm', () => {
       title: 'My Todo',
       description: 'A description',
       status: 'open',
+      priority: 'medium',
     });
   });
 
@@ -99,6 +100,7 @@ describe('TodoForm', () => {
       title: 'Trimmed Title',
       description: 'Trimmed Desc',
       status: 'open',
+      priority: 'medium',
     });
   });
 
@@ -106,5 +108,42 @@ describe('TodoForm', () => {
     render(<TodoForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
     // The Select component from @grafana/ui renders the selected value
     expect(screen.getByText('Open')).toBeInTheDocument();
+  });
+
+  it('renders priority Select with 4 options and defaults to "medium"', () => {
+    render(<TodoForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
+
+    const prioritySelect = screen.getByTestId('todo-priority-select');
+    expect(prioritySelect).toBeInTheDocument();
+    expect(prioritySelect).toHaveValue('medium');
+
+    const options = prioritySelect.querySelectorAll('option');
+    expect(options).toHaveLength(4);
+    expect(Array.from(options).map((o) => o.value)).toEqual(['low', 'medium', 'high', 'critical']);
+  });
+
+  it('pre-selects current priority when editing', () => {
+    render(
+      <TodoForm
+        initialValues={{ title: 'Test', status: 'open', priority: 'critical' }}
+        onSubmit={mockOnSubmit}
+        onCancel={mockOnCancel}
+      />
+    );
+
+    expect(screen.getByTestId('todo-priority-select')).toHaveValue('critical');
+  });
+
+  it('submits with selected priority value', async () => {
+    const user = userEvent.setup();
+    render(<TodoForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
+
+    await user.type(screen.getByTestId('todo-title-input'), 'Priority Task');
+    await user.selectOptions(screen.getByTestId('todo-priority-select'), 'high');
+    await user.click(screen.getByTestId('todo-submit-btn'));
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Priority Task', priority: 'high' })
+    );
   });
 });

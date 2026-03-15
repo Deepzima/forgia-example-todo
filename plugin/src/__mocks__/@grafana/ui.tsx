@@ -136,8 +136,35 @@ Card.Actions = function Actions({ children }: { children: React.ReactNode }): Re
   return <div>{children}</div>;
 };
 
-export function Badge({ text, color }: { text: string; color: string }): React.ReactElement {
-  return <span data-color={color}>{text}</span>;
+export function Badge({ text, color, ...rest }: { text: string; color: string; 'data-testid'?: string }): React.ReactElement {
+  return <span data-color={color} data-testid={rest['data-testid']}>{text}</span>;
+}
+
+export function RadioButtonGroup({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ label: string; value: string }>;
+  value: string;
+  onChange: (value: string) => void;
+}): React.ReactElement {
+  return (
+    <div role="radiogroup">
+      {options.map((opt) => (
+        <label key={opt.value}>
+          <input
+            type="radio"
+            name="radio-group"
+            value={opt.value}
+            checked={value === opt.value}
+            onChange={() => onChange(opt.value)}
+          />
+          {opt.label}
+        </label>
+      ))}
+    </div>
+  );
 }
 
 export function Alert({

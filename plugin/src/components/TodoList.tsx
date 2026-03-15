@@ -3,6 +3,7 @@ import { Badge, Button, Card, ConfirmModal, Stack } from '@grafana/ui';
 
 import type { Todo } from '../generated/todo/v1/todo_object_gen';
 import type { Spec } from '../generated/todo/v1/types.spec.gen';
+import { getPriority, priorityColorMap, PRIORITY_OPTIONS } from './priorityUtils';
 
 interface TodoListProps {
   todos: Todo[];
@@ -61,6 +62,11 @@ export function TodoList({ todos, onEdit, onDelete, onStatusChange }: TodoListPr
             <Card.Description>{todo.spec.description ?? ''}</Card.Description>
             <Card.Tags>
               <Badge text={statusLabel(todo.spec.status)} color={statusColor(todo.spec.status)} />
+              <Badge
+                text={PRIORITY_OPTIONS.find((o) => o.value === getPriority(todo.spec))?.label ?? 'Medium'}
+                color={priorityColorMap[getPriority(todo.spec)]}
+                data-testid={`todo-priority-badge-${todo.metadata.name}`}
+              />
             </Card.Tags>
             <Card.Actions>
               <Stack direction="row" gap={1}>

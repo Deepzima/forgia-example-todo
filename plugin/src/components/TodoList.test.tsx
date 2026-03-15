@@ -120,4 +120,23 @@ describe('TodoList', () => {
 
     expect(screen.queryByTestId('todo-advance-test-todo')).not.toBeInTheDocument();
   });
+
+  it.each([
+    ['low', 'blue', 'Low'],
+    ['medium', 'yellow', 'Medium'],
+    ['high', 'orange', 'High'],
+    ['critical', 'red', 'Critical'],
+  ] as const)('renders %s priority badge with color=%s', (priority, expectedColor, expectedLabel) => {
+    const todo = makeTodo({
+      spec: { title: `${priority} todo`, status: 'open', priority },
+    });
+
+    render(
+      <TodoList todos={[todo]} onEdit={mockOnEdit} onDelete={mockOnDelete} onStatusChange={mockOnStatusChange} />
+    );
+
+    const badge = screen.getByTestId('todo-priority-badge-test-todo');
+    expect(badge).toHaveTextContent(expectedLabel);
+    expect(badge).toHaveAttribute('data-color', expectedColor);
+  });
 });

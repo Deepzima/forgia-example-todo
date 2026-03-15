@@ -2,9 +2,9 @@
 id: "SDD-003"
 fd: "FD-002"
 title: "UI components — priority selector, badges, and filtering"
-status: planned
-agent: ""
-assigned_to: ""
+status: done
+agent: "claude-code"
+assigned_to: "claude-code"
 created: "2026-03-15"
 started: ""
 completed: ""
@@ -69,30 +69,30 @@ This SDD depends on **SDD-001** (generated TypeScript types) and **SDD-002** (AP
 
 ## Acceptance Criteria / Criteri di Accettazione
 
-- [ ] TodoForm shows a "Priority" dropdown with options: Low, Medium, High, Critical
-- [ ] TodoForm defaults to "Medium" when creating a new Todo
-- [ ] TodoForm pre-selects the current priority when editing an existing Todo
-- [ ] TodoList shows a colored Badge next to each Todo: low=blue, medium=yellow, high=orange, critical=red
-- [ ] TodoPage has a sort control that can sort by priority (critical first or low first)
-- [ ] TodoPage has a filter control to show only specific priority levels
-- [ ] All existing tests still pass (no regressions)
-- [ ] New tests cover form interaction, badge rendering, sort, and filter
+- [x] TodoForm shows a "Priority" dropdown with options: Low, Medium, High, Critical
+- [x] TodoForm defaults to "Medium" when creating a new Todo
+- [x] TodoForm pre-selects the current priority when editing an existing Todo
+- [x] TodoList shows a colored Badge next to each Todo: low=blue, medium=yellow, high=orange, critical=red
+- [x] TodoPage has a sort control that can sort by priority (critical first or low first)
+- [x] TodoPage has a filter control to show only specific priority levels
+- [x] All existing tests still pass (no regressions)
+- [x] New tests cover form interaction, badge rendering, sort, and filter
 
 ## Context / Contesto
 
-- [ ] `plugin/src/components/TodoForm.tsx` — existing form with title, description, status fields
-- [ ] `plugin/src/components/TodoList.tsx` — existing list with status Badge pattern to follow
-- [ ] `plugin/src/pages/TodoPage.tsx` — main page with view mode state management
-- [ ] `plugin/src/hooks/useTodos.ts` — state hook (may need sort/filter additions)
-- [ ] `plugin/src/api/todoApi.ts` — API client (should work without changes since it passes full spec)
-- [ ] `plugin/src/generated/todo/v1/` — generated TypeScript types (from SDD-001)
+- [x] `plugin/src/components/TodoForm.tsx` — existing form with title, description, status fields
+- [x] `plugin/src/components/TodoList.tsx` — existing list with status Badge pattern to follow
+- [x] `plugin/src/pages/TodoPage.tsx` — main page with view mode state management
+- [x] `plugin/src/hooks/useTodos.ts` — state hook (may need sort/filter additions)
+- [x] `plugin/src/api/todoApi.ts` — API client (should work without changes since it passes full spec)
+- [x] `plugin/src/generated/todo/v1/` — generated TypeScript types (from SDD-001)
 
 ## Constitution Check
 
-- [ ] Respects code standards: TypeScript strict mode, `const` over `let`, explicit return types
-- [ ] Respects commit conventions: `feat(FD-002/SDD-003): add priority UI components`
-- [ ] No hardcoded secrets
-- [ ] Tests defined and sufficient: unit tests for form, badges, sort, and filter
+- [x] Respects code standards: TypeScript strict mode, `const` over `let`, explicit return types
+- [x] Respects commit conventions: `feat(FD-002/SDD-003): add priority UI components`
+- [x] No hardcoded secrets
+- [x] Tests defined and sufficient: unit tests for form, badges, sort, and filter
 
 ---
 
@@ -102,24 +102,34 @@ This SDD depends on **SDD-001** (generated TypeScript types) and **SDD-002** (AP
 
 ### Agent / Agente
 
-- **Executor**: <!-- openhands | claude-code | manual | name -->
-- **Started**: <!-- timestamp -->
-- **Completed**: <!-- timestamp -->
-- **Duration / Durata**: <!-- total time -->
+- **Executor**: claude-code
+- **Started**: 2026-03-15
+- **Completed**: 2026-03-15
+- **Duration / Durata**: ~15 min
 
 ### Decisions / Decisioni
 
-1. <!-- decision 1: what and why -->
+1. Created a shared `priorityUtils.ts` module for constants (options, color map, sort weights) and pure functions (`sortByPriority`, `filterByPriority`, `getPriority`) since they are used by multiple components (TodoForm, TodoList, TodoPage).
+2. Used `RadioButtonGroup` for sort control (3 states: no sort, critical-first, low-first) and `Select` for priority filter — keeps controls compact and consistent with existing Grafana UI patterns.
+3. `getPriority()` logs a `console.warn` when priority is missing rather than silently falling back — follows the "no silent fallbacks" constitution rule while still being resilient.
+4. Filter uses a single-select dropdown (one priority at a time or "All") to keep the UI simple; the underlying `filterByPriority` function supports multi-select for future extensibility.
 
 ### Output
 
-- **Commit(s)**: <!-- hash -->
-- **PR**: <!-- link -->
+- **Commit(s)**: b8b3426
+- **PR**: —
 - **Files created/modified**:
-  - `path/to/file`
+  - `plugin/src/components/priorityUtils.ts` (new — shared constants and pure functions)
+  - `plugin/src/components/priorityUtils.test.ts` (new — unit tests for sort, filter, getPriority)
+  - `plugin/src/components/TodoForm.tsx` (modified — added priority Select dropdown)
+  - `plugin/src/components/TodoForm.test.tsx` (modified — added priority tests)
+  - `plugin/src/components/TodoList.tsx` (modified — added priority Badge)
+  - `plugin/src/components/TodoList.test.tsx` (modified — added priority badge color tests)
+  - `plugin/src/pages/TodoPage.tsx` (modified — added sort and filter controls)
+  - `plugin/src/__mocks__/@grafana/ui.tsx` (modified — added RadioButtonGroup mock)
 
 ### Retrospective / Retrospettiva
 
-- **What worked / Cosa ha funzionato**:
-- **What didn't / Cosa non ha funzionato**:
-- **Suggestions for future FDs / Suggerimenti per FD futuri**:
+- **What worked / Cosa ha funzionato**: Existing component patterns (Select, Badge) made it straightforward to add priority support. The mock-based test setup allowed fast iteration. All 47 tests pass with no regressions.
+- **What didn't / Cosa non ha funzionato**: Nothing significant — the generated Spec type already had the optional priority field from SDD-001.
+- **Suggestions for future FDs / Suggerimenti per FD futuri**: Consider specifying whether filter controls should be single-select or multi-select in the SDD to avoid implementation ambiguity.

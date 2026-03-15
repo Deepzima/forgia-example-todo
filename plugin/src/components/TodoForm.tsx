@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Button, Field, Input, Select, TextArea } from '@grafana/ui';
 
 import type { Spec } from '../generated/todo/v1/types.spec.gen';
+import { PRIORITY_OPTIONS, getPriority } from './priorityUtils';
+import type { Priority } from './priorityUtils';
 
 const STATUS_OPTIONS = [
   { label: 'Open', value: 'open' as const },
@@ -20,6 +22,7 @@ export function TodoForm({ initialValues, onSubmit, onCancel, isSubmitting = fal
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [status, setStatus] = useState<Spec['status']>(initialValues?.status ?? 'open');
+  const [priority, setPriority] = useState<Priority>(initialValues ? getPriority(initialValues) : 'medium');
   const [titleError, setTitleError] = useState<string | undefined>(undefined);
 
   const handleSubmit = (e: React.FormEvent): void => {
@@ -36,6 +39,7 @@ export function TodoForm({ initialValues, onSubmit, onCancel, isSubmitting = fal
       title: trimmedTitle,
       description: description.trim() || undefined,
       status,
+      priority,
     });
   };
 
@@ -63,6 +67,20 @@ export function TodoForm({ initialValues, onSubmit, onCancel, isSubmitting = fal
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
           placeholder="Enter description (optional)"
           rows={3}
+          disabled={isSubmitting}
+        />
+      </Field>
+
+      <Field label="Priority">
+        <Select
+          data-testid="todo-priority-select"
+          options={[...PRIORITY_OPTIONS]}
+          value={priority}
+          onChange={(v) => {
+            if (v.value) {
+              setPriority(v.value as Priority);
+            }
+          }}
           disabled={isSubmitting}
         />
       </Field>
