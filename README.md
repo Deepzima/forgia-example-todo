@@ -61,7 +61,7 @@ forgia validate FD-001
 # → Total: 4 | Valid: 4 | Invalid: 0
 ```
 
-### 4. Agent Execution
+### 4. Agent Execution (FD-001 — manual exec)
 
 ```bash
 # Execute each SDD sequentially (runner: claude, Max subscription)
@@ -71,14 +71,33 @@ forgia exec .forgia/sdd/FD-001/SDD-003-todo-frontend-plugin.md      # ~13 min
 forgia exec .forgia/sdd/FD-001/SDD-004-deployment-zima-lab.md       # ~5 min
 ```
 
-### 5. Final Status
+### 5. Second Feature (FD-002 — watch mode)
+
+```bash
+# Terminal 1: start watcher BEFORE generating SDDs
+forgia watch FD-002
+
+# Terminal 2: inside Claude Code
+/fd-new "Add priority field to Todo"
+/fd-review FD-002       # fix → re-review → approved
+/fd-sdd FD-002          # generates 3 SDDs
+
+# Terminal 1 auto-detects and executes:
+#   SDD-001 (data model)  → 2m 31s, 14 tests
+#   SDD-002 (API layer)   → 3m 55s, 44 tests
+#   SDD-003 (UI)          → 4m 51s, 47 tests
+```
+
+### 6. Final Status
 
 ```bash
 forgia status
-# 1 FD (in-progress), 4 SDDs (all done)
+# 2 FDs, 7 SDDs (all done)
 ```
 
 ## Specs (FD + SDDs)
+
+### FD-001 — Todo Grafana App (initial build)
 
 | Document | Description | Link |
 |----------|-------------|------|
@@ -88,7 +107,18 @@ forgia status
 | **SDD-003** | Frontend Grafana plugin (TypeScript + React) | [docs/sdd/SDD-003-todo-frontend-plugin.md](docs/sdd/SDD-003-todo-frontend-plugin.md) |
 | **SDD-004** | K8s manifests, Dockerfile, CI/CD, zima-lab deploy | [docs/sdd/SDD-004-deployment-zima-lab.md](docs/sdd/SDD-004-deployment-zima-lab.md) |
 
+### FD-002 — Add priority field (incremental feature)
+
+| Document | Description | Link |
+|----------|-------------|------|
+| **FD-002** | Feature Design — priority enum, filtering, sorting | [docs/fd/FD-002-add-priority-field-to-todo.md](docs/fd/FD-002-add-priority-field-to-todo.md) |
+| **SDD-001** | Data model — priority in CUE/Go/TS schema | [docs/sdd/SDD-001-data-model-priority.md](docs/sdd/SDD-001-data-model-priority.md) |
+| **SDD-002** | API layer — CRUD with priority validation | [docs/sdd/SDD-002-api-layer-priority.md](docs/sdd/SDD-002-api-layer-priority.md) |
+| **SDD-003** | UI — selector, badges, sort & filter | [docs/sdd/SDD-003-ui-priority-components.md](docs/sdd/SDD-003-ui-priority-components.md) |
+
 ## Results
+
+### FD-001 (manual exec)
 
 | SDD | Time | Files | Tests | Coverage |
 |-----|------|-------|-------|----------|
@@ -96,7 +126,20 @@ forgia status
 | SDD-002 | ~8 min | 6 | 35 tests | 98.8% |
 | SDD-003 | ~13 min | 27 | 32 tests | Components + hooks + API |
 | SDD-004 | ~5 min | 11 | 26 validation checks | YAML + security + RBAC |
-| **Total** | **~33 min** | **64 files** | **93+ tests** | **Zero manual code** |
+| **Total** | **~33 min** | **64 files** | **93+ tests** | |
+
+### FD-002 (watch mode — fully automatic)
+
+| SDD | Time | Files | Tests | Coverage |
+|-----|------|-------|-------|----------|
+| SDD-001 | 2m 31s | 7 | 14 tests | CUE + Go + TS types |
+| SDD-002 | 3m 55s | 2 | 44 tests | Handler + validation |
+| SDD-003 | 4m 51s | 8 | 47 tests | Components + utils |
+| **Total** | **11m 17s** | **17 files** | **105 tests** | |
+
+### Grand Total
+
+**~44 min, 81 files, 198+ tests — zero manual code.**
 
 ## Project Structure
 
