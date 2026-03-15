@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "TODO App",
+  "id": "todo-app",
+  "info": {
+    "keywords": ["todo", "task", "management"],
+    "description": "TODO management app plugin for Grafana",
+    "author": {
+      "name": "Zima"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "version": "1.0.0",
+    "updated": "2026-03-15"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "TODO List",
+      "path": "/a/todo-app/todos",
+      "role": "Viewer",
+      "addToNav": true,
+      "defaultNav": true
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=11.0.0",
+    "plugins": []
+  }
+}
