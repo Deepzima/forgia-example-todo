@@ -1,7 +1,7 @@
 ---
 id: "FD-001"
 title: "TODO Grafana App - grafana-app-sdk CRUD with zima-lab deploy"
-status: in-progress
+status: closed
 priority: medium
 effort: medium
 impact: medium

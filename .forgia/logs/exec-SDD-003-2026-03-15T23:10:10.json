@@ -1,0 +1,10 @@
+{
+  "sdd": "SDD-003",
+  "file": ".forgia/sdd/FD-002/SDD-003-ui-priority-components.md",
+  "runner": "claude-code",
+  "started": "2026-03-15T22:05:19Z",
+  "completed": "2026-03-15T22:10:10Z",
+  "duration_seconds": 291,
+  "exit_code": 0,
+  "status": "success"
+}

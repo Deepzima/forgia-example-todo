@@ -109,12 +109,12 @@ L'agent NON deve:
 
 ## Acceptance Criteria / Criteri di Accettazione
 
-- [ ] Il CRD `Todo` (apiVersion: `todo.grafana.app/v1`) e' installabile su un cluster Kubernetes
-- [ ] Lo schema OpenAPI del CRD valida correttamente i campi `title` (required), `description` (optional), `status` (enum)
-- [ ] Il campo `status` accetta solo i valori `open`, `in_progress`, `done` — valori non validi vengono rifiutati
-- [ ] I tipi Go sono generati tramite `grafana-app-sdk` codegen e compilano senza errori
-- [ ] I test unitari passano con `go test ./...`
-- [ ] Nessun segreto hardcoded nel codice o nei manifest
+- [x] Il CRD `Todo` (apiVersion: `todo.grafana.app/v1`) e' installabile su un cluster Kubernetes
+- [x] Lo schema OpenAPI del CRD valida correttamente i campi `title` (required), `description` (optional), `status` (enum)
+- [x] Il campo `status` accetta solo i valori `open`, `in_progress`, `done` — valori non validi vengono rifiutati
+- [x] I tipi Go sono generati tramite `grafana-app-sdk` codegen e compilano senza errori
+- [x] I test unitari passano con `go test ./...`
+- [x] Nessun segreto hardcoded nel codice o nei manifest
 
 ## Context / Contesto
 

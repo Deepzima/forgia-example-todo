@@ -1,7 +1,7 @@
 ---
 id: "FD-002"
 title: "Add priority field to Todo"
-status: in-progress
+status: closed
 priority: medium
 effort: medium
 impact: medium

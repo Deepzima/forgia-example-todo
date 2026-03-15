@@ -1,0 +1,10 @@
+{
+  "sdd": "SDD-001",
+  "file": ".forgia/sdd/FD-002/SDD-001-data-model-priority.md",
+  "runner": "claude-code",
+  "started": "2026-03-15T21:58:53Z",
+  "completed": "2026-03-15T22:01:24Z",
+  "duration_seconds": 151,
+  "exit_code": 0,
+  "status": "success"
+}

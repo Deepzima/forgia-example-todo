@@ -1,0 +1,28 @@
+=== Forgia Exec Log ===
+SDD: SDD-001
+File: .forgia/sdd/FD-002/SDD-001-data-model-priority.md
+Started: 2026-03-15T21:58:53Z
+Runner: claude-code
+---
+[22:59:29] Modified kinds/todo_v1.cue
+[22:59:29] Modified pkg/generated/todo/v1/todo_spec_gen.go
+[22:59:34] Modified plugin/src/generated/todo/v1/types.spec.gen.ts
+[22:59:39] Modified definitions/todo.todo.grafana.app.json
+[22:59:44] Modified pkg/generated/todo/v1/todo_test.go
+[23:00:04] Modified pkg/generated/todo/v1/todo_crd_schema_test.go
+All done. Here's a summary of what was implemented:
+
+**Files modified (7):**
+- `kinds/todo_v1.cue` — added `priority: *"medium" | "low" | "high" | "critical"`
+- `pkg/generated/todo/v1/todo_spec_gen.go` — added `Priority SpecPriority` field + `SpecPriority` type with 4 constants
+- `plugin/src/generated/todo/v1/types.spec.gen.ts` — added optional `priority` union type
+- `definitions/todo.todo.grafana.app.json` — added `priority` property with enum + default
+- `pkg/generated/todo/v1/todo_test.go` — 3 new tests (constants, backward compat, serialization)
+- `pkg/generated/todo/v1/todo_crd_schema_test.go` — priority CRD schema validation
+- `.forgia/sdd/FD-002/SDD-001-data-model-priority.md` — all criteria checked, Work Log filled, status → done
+
+**All 14 Go tests pass.** TypeScript types compile cleanly. Commit: `6ecac7d`.
+---
+Completed: 2026-03-15T22:01:24Z
+Duration: 2m 31s
+Exit code: 0

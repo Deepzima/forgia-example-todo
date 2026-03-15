@@ -1,0 +1,10 @@
+{
+  "sdd": "SDD-002",
+  "file": ".forgia/sdd/FD-002/SDD-002-api-layer-priority.md",
+  "runner": "claude-code",
+  "started": "2026-03-15T22:01:24Z",
+  "completed": "2026-03-15T22:05:19Z",
+  "duration_seconds": 235,
+  "exit_code": 0,
+  "status": "success"
+}

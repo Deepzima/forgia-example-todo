@@ -1,0 +1,19 @@
+=== Forgia Exec Log ===
+SDD: SDD-002
+File: .forgia/sdd/FD-002/SDD-002-api-layer-priority.md
+Started: 2026-03-15T22:01:24Z
+Runner: claude-code
+---
+[23:02:04] Modified pkg/handler/todo_handler.go
+[23:03:20] Modified pkg/handler/todo_handler_test.go
+SDD-002 is complete. Commit `e148286`. Here's what was done:
+
+**Files modified:**
+- `pkg/handler/todo_handler.go` — Added `Priority *string` to `TodoRequest`, `validatePriority()` and `ensurePriority()` helpers, wired priority into `CreateTodo` (defaults to "medium"), `UpdateTodo` (validates and sets), `GetTodo` and `ListTodos` (defaults empty to "medium")
+- `pkg/handler/todo_handler_test.go` — Added 10 new tests: all 4 priority values on create/update, default priority, invalid priority rejection (2 values each for create/update), get returns priority, legacy Todos default to "medium", list includes priority on every item, full CRUD integration test
+
+**All 8 acceptance criteria met**, all 44 tests pass.
+---
+Completed: 2026-03-15T22:05:19Z
+Duration: 3m 55s
+Exit code: 0
